@@ -25,11 +25,11 @@ class BudgetTimeSeries {
     })
   }
 
-  def raw: Map[Instant, Double] = series.toMap[Instant, Double]
+  def raw: Seq[(Instant, Double)] = series.toSeq.sortBy(_._1)
 
-  def cumulative(): Map[Instant, Double] = {
+  def cumulative(): Seq[(Instant, Double)] = {
     val cs = Matlib.cumsum(series.values.toArray)
-    series.keys.zip(cs).toMap
+    series.keys.zip(cs).toSeq.sortBy(_._1)
   }
 
 }

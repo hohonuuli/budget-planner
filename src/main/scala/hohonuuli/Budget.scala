@@ -26,7 +26,7 @@ object CurrentBudget extends Budget {
     Ongoing("My Pay", 2000, "2017-12-14", Duration.ofDays(14)),
     Ongoing("Spouses Pay", 2000, "2017-12-14", Duration.ofDays(14)),
     Monthly("Mortgage", -2500.01, "2018-01-01"),
-    Loan("Auto Loan", 350.01, "2017-12-01", "2020-12-02"),
+    Loan("Auto Loan", -350.01, "2017-12-01", "2020-12-02"),
     Ongoing("Insurance", -400, "2017-12-10", Duration.ofDays(90)),
     Monthly("Cell Phones", -90, "2017-12-07"),
     Monthly("Gas and Electric", -100, "2017-12-03"),

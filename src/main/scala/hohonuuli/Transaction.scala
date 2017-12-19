@@ -26,7 +26,7 @@ trait Transaction {
     def loop(b0: Transaction): Stream[Transaction] = {
       b0.next match {
         case Some(b) => b0 #:: loop(b)
-        case None => Stream.empty[Transaction]
+        case None => b0 #:: Stream.empty[Transaction]
       }
     }
     loop(this)
@@ -41,7 +41,6 @@ case class OneTime(label: String,
 
   override val next: Option[Transaction] = None
   override val accumulatedValue: Double = value
-  override def stream: Stream[Transaction] = this #:: Stream.empty[Transaction]
 }
 
 /**
@@ -103,7 +102,7 @@ case class Loan(label: String,
   override lazy val next: Option[Transaction] = {
     val nextDate = Monthly.nextDate(date)
     if (nextDate.isBefore(endDate)) {
-      Some(Monthly(label, value, nextDate, accumulatedValue + value))
+      Some(Loan(label, value, nextDate, endDate, accumulatedValue + value))
     }
     else None
   }

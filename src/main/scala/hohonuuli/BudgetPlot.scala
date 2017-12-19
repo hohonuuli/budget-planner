@@ -21,5 +21,8 @@ object BudgetPlot extends App with scalax.chart.module.Charting {
   val chart = XYLineChart(data)
   chart.saveAsPNG("target/chart.png")
 
+  timeseries.cumulative()
+    .foreach({ case (t, v) => printf("%s\t%.2f\n", t.toString, v)})
+
 }
 
