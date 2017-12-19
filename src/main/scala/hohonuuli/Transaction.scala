@@ -32,97 +32,80 @@ trait Transaction {
     loop(this)
   }
 }
+/**
+  * A OneTime transaction does not reoccur in our model.
+  */
+case class OneTime(label: String,
+                   value: Double,
+                   date: Instant) extends Transaction {
 
-case class OneTime(label: String, value: Double, date: Instant) extends Transaction {
-  /** Most events reoccur or repeat. This returns Some if there is another event, None if it's the last even in the sequence */
-  override def next: Option[Transaction] = None
-
-  /** The accumlated value of an event as it progresses in time */
-  override def accumulatedValue: Double = value
-
+  override val next: Option[Transaction] = None
+  override val accumulatedValue: Double = value
   override def stream: Stream[Transaction] = this #:: Stream.empty[Transaction]
 }
 
 /**
-  * An event that reoccurs at some period pretty much indefinitly. Good for paychecks
-  * @param value
-  * @param date
-  * @param repeatInterval
-  * @param accumulatedValue
+  * Ongoing transactions occur at a regular interval. e.g. a paycheck every 14 days.
   */
 case class Ongoing(label: String, value: Double,
                    date: Instant,
                    repeatInterval: Duration,
                    accumulatedValue: Double = 0)
-    extends Transaction {
-      lazy val next: Option[Transaction] = {
-          Some(Ongoing(label, value, date.plus(repeatInterval), repeatInterval, accumulatedValue + value))
-      }
+  extends Transaction {
+
+  lazy val next: Option[Transaction] = {
+    Some(Ongoing(label, value, date.plus(repeatInterval), repeatInterval,
+      accumulatedValue + value))
+  }
+}
+
+object Monthly {
+
+  /**
+    * Helper function to get next the a date on the same day in the next month.
+    * For example, if the date of a transaction is 2017-11-04, nextDate will
+    * return 2017-12-04
+    */
+  def nextDate(date: Instant): Instant = {
+    val zdt = date.atZone(ZoneId.systemDefault())
+    val dayOfMonth = zdt.get(ChronoField.DAY_OF_MONTH)
+    zdt.`with`(TemporalAdjusters.firstDayOfNextMonth())
+      .plus(Duration.ofDays(dayOfMonth - 1))
+      .toInstant
+  }
 }
 
 /**
-  * A repeated event that terminates at some date. Car-payments, braces.
-  * @param value
-  * @param date
-  * @param repeatInterval
-  * @param endDate The date to terminate the repitition.  Exclusive
-  * @param accumulatedValue
+  * A transaction that occurs on the same day of every month ... forever!
   */
-case class Limited(label: String,
+case class Monthly(label: String,
                    value: Double,
                    date: Instant,
-                   repeatInterval: Duration,
-                   endDate: Instant,
                    accumulatedValue: Double = 0)
-    extends Transaction {
-  override def next: Option[Transaction] = {
-    val nextDate = date.plus(repeatInterval)
+  extends Transaction {
+
+  lazy val next: Option[Transaction] = {
+    Some(Monthly(label, value, Monthly.nextDate(date),
+      accumulatedValue + value))
+  }
+}
+
+/**
+  * A monthly event that does not occur forever. e.g. A car loan.
+  */
+case class Loan(label: String,
+                value: Double,
+                date: Instant,
+                endDate: Instant,
+                accumulatedValue: Double = 0)
+  extends Transaction {
+
+  override lazy val next: Option[Transaction] = {
+    val nextDate = Monthly.nextDate(date)
     if (nextDate.isBefore(endDate)) {
-      Some(Limited(label, value, nextDate, repeatInterval, endDate, accumulatedValue + value))
+      Some(Monthly(label, value, nextDate, accumulatedValue + value))
     }
     else None
   }
 
-}
-
-/**
-  * A repeated event that reoccurs a given number of times
-  * @param value
-  * @param date
-  * @param repeatInterval
-  * @param repeatCount
-  * @param accumulatedValue
-  */
-case class Repeated(label: String,
-                    value: Double,
-                    date: Instant,
-                    repeatInterval: Duration,
-                    repeatCount: Int,
-                    accumulatedValue: Double = 0) extends Transaction {
-  override def next: Option[Transaction] = {
-    if (repeatCount > 0) {
-      Some(Repeated(label, value, date.plus(repeatInterval), repeatInterval, repeatCount - 1, accumulatedValue + value))
-    }
-    else None
-  }
-}
-
-/**
-  * An event that reoccurs on the same day of the month every month.
-  * @param value
-  * @param date
-  * @param accumulatedValue
-  */
-case class Monthly(label: String, value: Double, date: Instant, accumulatedValue: Double = 0)
-    extends Transaction {
-
-      lazy val next: Option[Transaction] = {
-        val zdt = date.atZone(ZoneId.systemDefault())
-        val dayOfMonth = zdt.get(ChronoField.DAY_OF_MONTH)
-        val newDate = zdt.`with`(TemporalAdjusters.firstDayOfNextMonth())
-          .plus(Duration.ofDays(dayOfMonth - 1))
-          .toInstant
-        Some(Monthly(label, value, newDate, accumulatedValue + value))
-      }
-    
 }
