@@ -15,5 +15,9 @@ lazy val `budget-planner` = (project in file(".")).
       "io.reactivex.rxjava2" % "rxjava" % rxjavaVersion,
       "org.scalatest" %% "scalatest" % scalatestVersion % "test",
       "scilube" %% "scilube-core" % "2.0.4"
+    ),
+    resolvers ++= Seq(
+      Resolver.mavenLocal,
+      Resolver.bintrayRepo("hohonuuli", "maven")
     )
   )
