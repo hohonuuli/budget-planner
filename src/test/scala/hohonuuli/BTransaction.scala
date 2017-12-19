@@ -13,11 +13,11 @@ import org.scalatest.{FlatSpec, Matchers}
 class BTransaction extends FlatSpec with Matchers {
 
   "Transaction" should "generate a stream" in {
-    val b = Ongoing("foo", 3343.95, Instant.now, Duration.ofDays(14))
-    println("Foo: " + b.stream.take(26).last.accumulatedValue)
+    val f = Ongoing("foo", 3343.95, Instant.now, Duration.ofDays(14))
+    println("Foo: " + f.stream.take(26).last.accumulatedValue)
 
-    val k = Ongoing("bar", 1579.74, Instant.now, Duration.ofDays(14))
-    println("Bar: " + k.stream.take(26).last.accumulatedValue)
+    val b = Ongoing("bar", 1579.74, Instant.now, Duration.ofDays(14))
+    println("Bar: " + b.stream.take(26).last.accumulatedValue)
 
   }
 }
