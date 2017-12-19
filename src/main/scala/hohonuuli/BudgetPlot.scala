@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 object BudgetPlot extends App with scalax.chart.module.Charting {
   val endDate = Instant.now.plus(Duration.ofDays(365))
   val budget = CurrentBudget
-  def filter(s: Stream[BudgetEvent]): Stream[BudgetEvent] = s.takeWhile(i => i.date.isBefore(endDate))
+  def filter(s: Stream[Transaction]): Stream[Transaction] = s.takeWhile(i => i.date.isBefore(endDate))
   val ev = budget.events
       .map(_.stream)
       .map(filter)

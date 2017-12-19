@@ -6,7 +6,7 @@ import java.time.{Duration, Instant, ZoneId}
 /**
   * Some event that occurs during a budget timeline
   */
-trait BudgetEvent {
+trait Transaction {
 
   /** The amount of money */
   def value: Double
@@ -15,32 +15,32 @@ trait BudgetEvent {
   def date: Instant
 
   /** Most events reoccur or repeat. This returns Some if there is another event, None if it's the last even in the sequence */
-  def next: Option[BudgetEvent]
+  def next: Option[Transaction]
 
   /** The accumlated value of an event as it progresses in time */
   def accumulatedValue: Double
 
   def label: String
 
-  def stream: Stream[BudgetEvent] = {
-    def loop(b0: BudgetEvent): Stream[BudgetEvent] = {
+  def stream: Stream[Transaction] = {
+    def loop(b0: Transaction): Stream[Transaction] = {
       b0.next match {
         case Some(b) => b0 #:: loop(b)
-        case None => Stream.empty[BudgetEvent]
+        case None => Stream.empty[Transaction]
       }
     }
     loop(this)
   }
 }
 
-case class OneTimeEvent(label: String, value: Double, date: Instant) extends BudgetEvent {
+case class OneTime(label: String, value: Double, date: Instant) extends Transaction {
   /** Most events reoccur or repeat. This returns Some if there is another event, None if it's the last even in the sequence */
-  override def next: Option[BudgetEvent] = None
+  override def next: Option[Transaction] = None
 
   /** The accumlated value of an event as it progresses in time */
   override def accumulatedValue: Double = value
 
-  override def stream: Stream[BudgetEvent] = this #:: Stream.empty[BudgetEvent]
+  override def stream: Stream[Transaction] = this #:: Stream.empty[Transaction]
 }
 
 /**
@@ -50,13 +50,13 @@ case class OneTimeEvent(label: String, value: Double, date: Instant) extends Bud
   * @param repeatInterval
   * @param accumulatedValue
   */
-case class OngoingEvent(label: String, value: Double,
-                        date: Instant,
-                        repeatInterval: Duration,
-                        accumulatedValue: Double = 0)
-    extends BudgetEvent {
-      lazy val next: Option[BudgetEvent] = {
-          Some(OngoingEvent(label, value, date.plus(repeatInterval), repeatInterval, accumulatedValue + value))
+case class Ongoing(label: String, value: Double,
+                   date: Instant,
+                   repeatInterval: Duration,
+                   accumulatedValue: Double = 0)
+    extends Transaction {
+      lazy val next: Option[Transaction] = {
+          Some(Ongoing(label, value, date.plus(repeatInterval), repeatInterval, accumulatedValue + value))
       }
 }
 
@@ -68,17 +68,17 @@ case class OngoingEvent(label: String, value: Double,
   * @param endDate The date to terminate the repitition.  Exclusive
   * @param accumulatedValue
   */
-case class LimitedEvent(label: String,
-                        value: Double,
-                        date: Instant,
-                        repeatInterval: Duration,
-                        endDate: Instant,
-                        accumulatedValue: Double = 0)
-    extends BudgetEvent {
-  override def next: Option[BudgetEvent] = {
+case class Limited(label: String,
+                   value: Double,
+                   date: Instant,
+                   repeatInterval: Duration,
+                   endDate: Instant,
+                   accumulatedValue: Double = 0)
+    extends Transaction {
+  override def next: Option[Transaction] = {
     val nextDate = date.plus(repeatInterval)
     if (nextDate.isBefore(endDate)) {
-      Some(LimitedEvent(label, value, nextDate, repeatInterval, endDate, accumulatedValue + value))
+      Some(Limited(label, value, nextDate, repeatInterval, endDate, accumulatedValue + value))
     }
     else None
   }
@@ -93,15 +93,15 @@ case class LimitedEvent(label: String,
   * @param repeatCount
   * @param accumulatedValue
   */
-case class RepeatedEvent(label: String,
-                            value: Double,
-                         date: Instant,
-                         repeatInterval: Duration,
-                         repeatCount: Int,
-                         accumulatedValue: Double = 0) extends BudgetEvent {
-  override def next: Option[BudgetEvent] = {
+case class Repeated(label: String,
+                    value: Double,
+                    date: Instant,
+                    repeatInterval: Duration,
+                    repeatCount: Int,
+                    accumulatedValue: Double = 0) extends Transaction {
+  override def next: Option[Transaction] = {
     if (repeatCount > 0) {
-      Some(RepeatedEvent(label, value, date.plus(repeatInterval), repeatInterval, repeatCount - 1, accumulatedValue + value))
+      Some(Repeated(label, value, date.plus(repeatInterval), repeatInterval, repeatCount - 1, accumulatedValue + value))
     }
     else None
   }
@@ -113,16 +113,16 @@ case class RepeatedEvent(label: String,
   * @param date
   * @param accumulatedValue
   */
-case class MonthlyEvent(label: String, value: Double, date: Instant, accumulatedValue: Double = 0)
-    extends BudgetEvent {
-      
-      lazy val next: Option[BudgetEvent] = {
+case class Monthly(label: String, value: Double, date: Instant, accumulatedValue: Double = 0)
+    extends Transaction {
+
+      lazy val next: Option[Transaction] = {
         val zdt = date.atZone(ZoneId.systemDefault())
         val dayOfMonth = zdt.get(ChronoField.DAY_OF_MONTH)
         val newDate = zdt.`with`(TemporalAdjusters.firstDayOfNextMonth())
           .plus(Duration.ofDays(dayOfMonth - 1))
           .toInstant
-        Some(MonthlyEvent(label, value, newDate, accumulatedValue + value))
+        Some(Monthly(label, value, newDate, accumulatedValue + value))
       }
     
 }
