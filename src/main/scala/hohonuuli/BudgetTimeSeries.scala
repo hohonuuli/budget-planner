@@ -17,7 +17,7 @@ class BudgetTimeSeries {
 
   private[this] val series = new mutable.TreeMap[Instant, Double]
 
-  def addToSeries(events: Seq[BudgetEvent]): Unit = {
+  def addToSeries(events: Seq[Transaction]): Unit = {
     events.foreach(e => {
       val t = e.date
       val v = e.value

@@ -10,7 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
   * @author Brian Schlining
   * @since 2017-12-17T13:18:00
   */
-class BEventSpec extends FlatSpec with Matchers {
+class BTransactionSpec extends FlatSpec with Matchers {
 
   "BudgetEvent" should "generate a stream" in {
     val b = OngoingEvent(3343.95, Instant.now, Duration.ofDays(14))
