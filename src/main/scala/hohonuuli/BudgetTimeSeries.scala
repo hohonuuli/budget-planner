@@ -1,9 +1,6 @@
 package hohonuuli
 
 import java.time.Instant
-import java.util.{Map => JMap}
-
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scilube.Matlib
 
@@ -28,13 +25,11 @@ class BudgetTimeSeries {
     })
   }
 
-  def raw: Map[Instant, Double] = series.toMap
+  def raw: Seq[(Instant, Double)] = series.toSeq.sortBy(_._1)
 
-  def cumulative(): Map[Instant, Double] = {
+  def cumulative(): Seq[(Instant, Double)] = {
     val cs = Matlib.cumsum(series.values.toArray)
-    series.keys.zip(cs).toMap
+    series.keys.zip(cs).toSeq.sortBy(_._1)
   }
-
-  def jCumulative: JMap[Instant, Double] = cumulative().asJava
 
 }
