@@ -25,7 +25,7 @@ trait BudgetEvent {
   def stream: Stream[BudgetEvent] = {
     def loop(b0: BudgetEvent): Stream[BudgetEvent] = {
       b0.next match {
-        case Some(b) => b0 #:: loop(b)
+        case Some(b1) => b0 #:: loop(b1)
         case None => Stream.empty[BudgetEvent]
       }
     }
